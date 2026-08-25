@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bitwize-music — Lyrics Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">🎙️</span>
+      <span class="brand-name">bitwize-music</span>
+      <span class="brand-sub">Lyrics Dashboard</span>
+    </div>
+    <div class="topbar-controls">
+      <label class="ctrl">
+        <span>Model</span>
+        <select id="modelSelect"></select>
+      </label>
+      <label class="ctrl">
+        <span>Effort</span>
+        <select id="effortSelect">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high" selected>High</option>
+          <option value="xhigh">X-High</option>
+          <option value="max">Max</option>
+        </select>
+      </label>
+      <label class="ctrl checkbox">
+        <input type="checkbox" id="thinkingToggle" checked />
+        <span>Show thinking</span>
+      </label>
+      <span id="keyStatus" class="key-status" title="Claude API key status">checking…</span>
+    </div>
+  </header>
+
+  <main class="dashboard">
+    <!-- LEFT: project + creative parameters -->
+    <aside class="panel params-panel">
+      <h2>Project</h2>
+      <div class="field-row">
+        <label>Artist Name<input type="text" id="artist" placeholder="e.g. bitwize" /></label>
+        <label>Album / Project<input type="text" id="project" placeholder="e.g. Neon Ledger" /></label>
+      </div>
+      <label class="field">Track Title<input type="text" id="songTitle" placeholder="e.g. Ghost in the Wire" /></label>
+
+      <h2>Genre &amp; Style</h2>
+      <div class="field-row">
+        <label>Genre
+          <input type="text" id="genre" list="genreList" placeholder="e.g. afrobeats" />
+          <datalist id="genreList"></datalist>
+        </label>
+        <label>Lyrics Style
+          <select id="lyricsStyle">
+            <option value="">—</option>
+            <option>Narrative</option>
+            <option>Conversational</option>
+            <option>Abstract / Poetic</option>
+            <option>Confessional</option>
+            <option>Storytelling / Documentary</option>
+            <option>Anthemic</option>
+            <option>Spoken Word</option>
+            <option>Stream of Consciousness</option>
+          </select>
+        </label>
+      </div>
+      <label class="field">
+        Styles / Sub-genres
+        <input type="text" id="stylesInput" placeholder="Type a style and press Enter" />
+      </label>
+      <div id="stylesChips" class="chip-row"></div>
+
+      <div class="field-row">
+        <label>POV
+          <select id="pov">
+            <option value="">—</option>
+            <option>First Person</option>
+            <option>Second Person</option>
+            <option>Third Person</option>
+            <option>Collective "We"</option>
+          </select>
+        </label>
+        <label>Tense
+          <select id="tense">
+            <option value="">—</option>
+            <option>Past</option>
+            <option>Present</option>
+            <option>Future</option>
+            <option>Mixed</option>
+          </select>
+        </label>
+      </div>
+
+      <h2>Tempo</h2>
+      <div class="field-row">
+        <label>BPM<input type="number" id="bpm" min="40" max="220" placeholder="e.g. 104" /></label>
+        <label>Tempo Feel
+          <select id="tempo">
+            <option value="">—</option>
+            <option>Ballad / Slow (60–80)</option>
+            <option>Mid-tempo (80–110)</option>
+            <option>Uptempo (110–140)</option>
+            <option>Fast / High-Energy (140+)</option>
+          </select>
+        </label>
+      </div>
+
+      <h2>Song Structure</h2>
+      <div id="structureChecks" class="check-grid"></div>
+
+      <h2>Meta Tags</h2>
+      <div id="metaTagQuick" class="chip-row quick"></div>
+      <label class="field">
+        Custom Meta Tag
+        <input type="text" id="metaTagInput" placeholder="e.g. gritty texas twang, press Enter" />
+      </label>
+      <div id="metaTagChips" class="chip-row"></div>
+
+      <h2>Creative Sliders</h2>
+      <div class="slider-block">
+        <label>Energy <span id="energyVal" class="slider-val">Mid-Energy (50)</span></label>
+        <input type="range" id="energy" min="0" max="100" value="50" />
+      </div>
+      <div class="slider-block">
+        <label>Mood <span id="moodVal" class="slider-val">Balanced (50)</span></label>
+        <input type="range" id="mood" min="0" max="100" value="50" />
+      </div>
+      <div class="slider-block">
+        <label>Vocabulary Complexity <span id="complexityVal" class="slider-val">Moderate (50)</span></label>
+        <input type="range" id="complexity" min="0" max="100" value="50" />
+      </div>
+      <div class="slider-block">
+        <label>Explicit Content <span id="explicitVal" class="slider-val">Mild (30)</span></label>
+        <input type="range" id="explicit" min="0" max="100" value="30" />
+      </div>
+
+      <h2>Concept / Direction</h2>
+      <textarea id="concept" class="concept-box" placeholder="Describe the story, theme, hook idea, or true-story angle for this track…"></textarea>
+    </aside>
+
+    <!-- CENTER: lyrics editor -->
+    <section class="panel editor-panel">
+      <div class="editor-toolbar">
+        <h2>Lyrics</h2>
+        <div class="toolbar-actions">
+          <select id="tagInsertSelect"></select>
+          <button id="insertTagBtn" class="btn small">Insert at cursor</button>
+          <button id="copyLyricsBtn" class="btn small">Copy</button>
+          <button id="clearLyricsBtn" class="btn small ghost">Clear</button>
+        </div>
+      </div>
+      <textarea id="lyricsEditor" class="lyrics-editor" placeholder="Write here, or generate lyrics with the Write Lyrics button →"></textarea>
+      <div class="editor-status">
+        <span id="lyricsCount">0 words · 0 chars</span>
+        <span id="genStatus" class="gen-status"></span>
+      </div>
+
+      <div class="skills-bar" id="skillsBar">
+        <!-- populated by app.js, grouped by category -->
+      </div>
+    </section>
+
+    <!-- RIGHT: output tabs -->
+    <section class="panel output-panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="report">Report</button>
+        <button class="tab" data-tab="suno">Suno Prompt</button>
+        <button class="tab" data-tab="thinking">Thinking</button>
+        <button class="tab" data-tab="log">Log</button>
+      </div>
+
+      <div class="tab-panels">
+        <div class="tab-panel active" id="tab-report">
+          <div class="panel-toolbar"><button class="btn small" id="copyReportBtn">Copy</button></div>
+          <div id="reportOutput" class="markdown-output">Run a Check or Plan skill to see its report here.</div>
+        </div>
+        <div class="tab-panel" id="tab-suno">
+          <div class="panel-toolbar"><button class="btn small" id="copySunoBtn">Copy</button></div>
+          <div id="sunoOutput" class="markdown-output">Run "Suno Style Box + Meta Tags" to see it here.</div>
+        </div>
+        <div class="tab-panel" id="tab-thinking">
+          <pre id="thinkingOutput" class="thinking-output">Claude's reasoning summary streams here while a skill is running.</pre>
+        </div>
+        <div class="tab-panel" id="tab-log">
+          <ul id="logList" class="log-list"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

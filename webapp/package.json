@@ -1,0 +1,20 @@
+{
+  "name": "bitwize-music-lyrics-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local web dashboard for writing Suno lyrics with the bitwize-music skills, powered directly by the Claude API.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
