@@ -7,20 +7,6 @@ export const REPO_ROOT = path.resolve(here, "..", "..");
 const VENDOR_DIR = path.join(here, "..", "vendor");
 
 /**
- * Prefer the real monorepo directory (local dev, or a git-linked deploy that
- * checks out the whole repo) and fall back to a bundled copy under
- * webapp/vendor/ (a standalone deploy — e.g. a direct file upload to Vercel —
- * only has what's inside webapp/). See webapp/README.md for how vendor/ is
- * kept in sync.
- */
-function resolveDir(primary, vendorName) {
-  return fs.existsSync(primary) ? primary : path.join(VENDOR_DIR, vendorName);
-}
-
-export const SKILLS_DIR = resolveDir(path.join(REPO_ROOT, "skills"), "skills");
-export const GENRES_DIR = resolveDir(path.join(REPO_ROOT, "genres"), "genres");
-
-/**
  * Curated set of bitwize-music skills exposed as dashboard buttons.
  * Each entry points at the real skills/<dir>/SKILL.md so the skill's own
  * craft knowledge drives generation. `task` and `outputContract` adapt the
@@ -168,6 +154,32 @@ export const SKILL_CATALOG = [
   },
 ];
 
+/**
+ * Resolve SKILLS_DIR: prefer the real monorepo `skills/` directory, but only
+ * if it actually contains every SKILL.md this dashboard needs. A serverless
+ * platform's automatic file-tracing for a dynamically-read sibling directory
+ * (outside the deployed function's own directory tree) can include the
+ * directory entry itself while silently omitting most of its contents —
+ * `fs.existsSync` on the parent then reports true even though reads inside
+ * it come back incomplete. Falls back to the bundled, guaranteed-complete
+ * copy under webapp/vendor/ whenever the real directory isn't fully present.
+ */
+function skillsDirComplete(dir) {
+  return SKILL_CATALOG.every((s) => fs.existsSync(path.join(dir, s.dir, "SKILL.md")));
+}
+
+const primarySkillsDir = path.join(REPO_ROOT, "skills");
+export const SKILLS_DIR = skillsDirComplete(primarySkillsDir) ? primarySkillsDir : path.join(VENDOR_DIR, "skills");
+
+// GENRES_DIR is used only for the best-effort per-genre excerpt (getGenreExcerpt
+// below) — a missing individual README there already degrades safely to no
+// excerpt, so a simple existence check is fine. The full genre *name list*
+// (listGenres) deliberately does NOT depend on this directory being complete —
+// see its own comment.
+export const GENRES_DIR = fs.existsSync(path.join(REPO_ROOT, "genres"))
+  ? path.join(REPO_ROOT, "genres")
+  : path.join(VENDOR_DIR, "genres");
+
 const SKILL_MAP = new Map(SKILL_CATALOG.map((s) => [s.id, s]));
 
 const frontmatterCache = new Map();
@@ -220,19 +232,26 @@ export function listSkillsForClient() {
   });
 }
 
+/**
+ * The genre *name list* (for autocomplete) always comes from the committed
+ * vendor/genres-list.json manifest, never from a live directory scan of
+ * GENRES_DIR — a serverless platform can silently include only some
+ * subdirectories of a large sibling directory it doesn't otherwise need,
+ * which would make a live scan return a wrong (partial) list instead of
+ * failing loudly. The manifest ships inside webapp/ itself, so it's always
+ * fully present wherever this code runs. Regenerate it if genres/ changes:
+ * see webapp/README.md.
+ */
 export function listGenres() {
   try {
-    return fs
-      .readdirSync(GENRES_DIR, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name)
-      .sort();
+    return JSON.parse(fs.readFileSync(path.join(VENDOR_DIR, "genres-list.json"), "utf8"));
   } catch {
-    // Standalone deploy: no per-genre folders bundled, just a flat name list
-    // for autocomplete (getGenreExcerpt will have nothing to read either way).
     try {
-      const listFile = path.join(VENDOR_DIR, "genres-list.json");
-      return JSON.parse(fs.readFileSync(listFile, "utf8"));
+      return fs
+        .readdirSync(GENRES_DIR, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name)
+        .sort();
     } catch {
       return [];
     }
