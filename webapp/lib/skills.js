@@ -4,8 +4,21 @@ import { fileURLToPath } from "url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(here, "..", "..");
-export const SKILLS_DIR = path.join(REPO_ROOT, "skills");
-export const GENRES_DIR = path.join(REPO_ROOT, "genres");
+const VENDOR_DIR = path.join(here, "..", "vendor");
+
+/**
+ * Prefer the real monorepo directory (local dev, or a git-linked deploy that
+ * checks out the whole repo) and fall back to a bundled copy under
+ * webapp/vendor/ (a standalone deploy — e.g. a direct file upload to Vercel —
+ * only has what's inside webapp/). See webapp/README.md for how vendor/ is
+ * kept in sync.
+ */
+function resolveDir(primary, vendorName) {
+  return fs.existsSync(primary) ? primary : path.join(VENDOR_DIR, vendorName);
+}
+
+export const SKILLS_DIR = resolveDir(path.join(REPO_ROOT, "skills"), "skills");
+export const GENRES_DIR = resolveDir(path.join(REPO_ROOT, "genres"), "genres");
 
 /**
  * Curated set of bitwize-music skills exposed as dashboard buttons.
@@ -215,7 +228,14 @@ export function listGenres() {
       .map((d) => d.name)
       .sort();
   } catch {
-    return [];
+    // Standalone deploy: no per-genre folders bundled, just a flat name list
+    // for autocomplete (getGenreExcerpt will have nothing to read either way).
+    try {
+      const listFile = path.join(VENDOR_DIR, "genres-list.json");
+      return JSON.parse(fs.readFileSync(listFile, "utf8"));
+    } catch {
+      return [];
+    }
   }
 }
 
