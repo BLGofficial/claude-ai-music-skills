@@ -52,6 +52,20 @@ This app also runs as a Vercel serverless function (`api/index.js` wraps the sam
 
 **Hobby plan note:** serverless function duration is capped (`vercel.json` requests the max 60s Hobby allows). A long lyric generation at high effort can exceed that and get cut off mid-stream — if that happens, lower the effort level or use Sonnet 5/Haiku 4.5 for deployed use, or run this locally via `npm start` instead, which has no such limit.
 
+### Why there's a `vendor/` folder
+
+Locally, `lib/skills.js` reads skill craft knowledge straight from the monorepo's `../skills/*/SKILL.md` and genre notes from `../genres/*/README.md`. A **standalone** deploy (a direct file upload, or a serverless bundler that only traces/packages `webapp/`'s own files) won't have those sibling directories available at runtime.
+
+`webapp/vendor/` is a small, committed snapshot for that case: `vendor/skills/<id>/SKILL.md` for each of the 11 skills this dashboard uses, and `vendor/genres-list.json` (just the genre names, for autocomplete — not the full reference notes). `lib/skills.js` prefers the real `../skills` / `../genres` directories when present and falls back to `vendor/` automatically otherwise, so the same code works both ways.
+
+If a skill's craft guidance changes, refresh its vendored copy:
+
+```bash
+cp ../skills/<id>/SKILL.md webapp/vendor/skills/<id>/SKILL.md
+```
+
+(`vendor/` intentionally doesn't carry the full genre reference notes — a deployment without the real `genres/` tree just won't send the bonus genre-excerpt context; autocomplete and everything else still works.)
+
 ## Notes
 
 - Model choice (Opus 5 / Sonnet 5 / Haiku 4.5) and effort level are set in the top bar and apply to every generation.
