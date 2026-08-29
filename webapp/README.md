@@ -42,6 +42,16 @@ Get a key at https://console.anthropic.com/settings/keys. The key stays server-s
 
 Skills that operate on real audio files or the album directory structure (mastering, mixing, cloud uploads, imports, release management) aren't included here — this dashboard is a text/lyrics workspace. Use Claude Code with the full plugin for those.
 
+## Deploying (Vercel)
+
+This app also runs as a Vercel serverless function (`api/index.js` wraps the same Express app; `vercel.json` routes everything through it and serves `public/` as static assets).
+
+1. In the Vercel project settings, set **Root Directory** to `webapp` (this lives in a subdirectory of the repo).
+2. Add the `ANTHROPIC_API_KEY` environment variable in the Vercel project settings — it is never committed and must be set there directly.
+3. Deploy. No build command is needed; Vercel installs `webapp/package.json`'s dependencies and runs the function directly.
+
+**Hobby plan note:** serverless function duration is capped (`vercel.json` requests the max 60s Hobby allows). A long lyric generation at high effort can exceed that and get cut off mid-stream — if that happens, lower the effort level or use Sonnet 5/Haiku 4.5 for deployed use, or run this locally via `npm start` instead, which has no such limit.
+
 ## Notes
 
 - Model choice (Opus 5 / Sonnet 5 / Haiku 4.5) and effort level are set in the top bar and apply to every generation.
